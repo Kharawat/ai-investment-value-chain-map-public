@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="th" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#080b10" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AI Value Chain" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta
+      name="description"
+      content="AI Investment Value Chain Map — แผนที่ความเชื่อมโยงหุ้น AI ตั้งแต่ต้นน้ำถึงปลายน้ำ"
+    />
+    <title>AI Investment Value Chain Map</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="data.js" defer></script>
+    <script src="app.js?v=20260723-10" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">ข้ามไปเนื้อหาหลัก</a>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="#top" aria-label="กลับไปด้านบน">
+          <span class="brand-mark" aria-hidden="true">AI</span>
+          <span>
+            <strong>Investment Value Chain</strong>
+            <small>Portfolio intelligence map</small>
+          </span>
+        </a>
+        <nav class="top-nav" aria-label="เมนูหลัก">
+          <a href="#map">Value Chain</a>
+          <a href="#scenarios">Scenarios</a>
+          <a href="#matrix">Dependency</a>
+          <a href="#checklist">Checklist</a>
+        </nav>
+        <button class="install-app-button" id="install-app" type="button">
+          <span aria-hidden="true">＋</span>
+          <span>ติดตั้งแอป</span>
+        </button>
+        <button class="icon-button theme-toggle" id="theme-toggle" type="button" aria-label="เปลี่ยนโหมดสี" aria-pressed="false">
+          <span class="theme-icon" aria-hidden="true">☾</span>
+          <span class="theme-label">Dark</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="market-tape" aria-label="ราคาหุ้นล่าสุด">
+      <div class="market-tape-inner">
+        <div class="market-tape-status">
+          <span class="market-live-dot" id="market-live-dot" aria-hidden="true"></span>
+          <span>
+            <strong id="market-status-label">กำลังเชื่อมต่อราคา</strong>
+            <small id="market-updated-label">อัปเดตอัตโนมัติทุก 30 วินาที</small>
+          </span>
+        </div>
+        <div class="market-tape-scroll" id="market-tape-items" aria-live="polite"></div>
+        <button class="market-refresh" id="market-refresh" type="button" aria-label="อัปเดตราคาหุ้นตอนนี้">
+          <span aria-hidden="true">↻</span>
+          Refresh
+        </button>
+      </div>
+    </section>
+
+    <main id="main-content">
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <div class="hero-glow glow-one"></div>
+        <div class="hero-glow glow-two"></div>
+        <div class="hero-content">
+          <p class="eyebrow"><span class="live-dot"></span> Portfolio structure · 12 positions · 8 layers</p>
+          <h1 id="hero-title">มองพอร์ต AI เป็น<br /><span>ระบบเดียวกัน</span></h1>
+          <p class="hero-copy">
+            แผนที่จากเครื่องจักรผลิตชิป สู่ Cloud, Enterprise AI, อุปกรณ์ผู้บริโภค
+            และเทคโนโลยีเฉพาะทาง—เพื่อดูว่า earnings ของบริษัทหนึ่งส่งแรงกระเพื่อมไปที่ใด
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#map">สำรวจ Value Chain <span aria-hidden="true">↓</span></a>
+            <a class="button secondary" href="#scenarios">ดู Scenario Analysis</a>
+          </div>
+        </div>
+        <div class="hero-stats" id="hero-stats" aria-label="สรุปพอร์ต"></div>
+      </section>
+
+      <section class="section shell" id="map" aria-labelledby="map-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">01 · VALUE CHAIN MAP</p>
+            <h2 id="map-title">จากต้นน้ำสู่ปลายน้ำ</h2>
+            <p>กดบริษัทเพื่อดูรายได้, dependencies, growth drivers, risks และผลกระทบต่อหุ้นอื่น</p>
+          </div>
+          <div class="map-controls" role="search">
+            <label class="search-box" for="company-search">
+              <span aria-hidden="true">⌕</span>
+              <input id="company-search" type="search" placeholder="ค้นหา Ticker หรือบริษัท" autocomplete="off" />
+              <kbd>/</kbd>
+            </label>
+          </div>
+        </div>
+
+        <div class="filter-row" id="category-filters" aria-label="กรองตามกลุ่ม"></div>
+        <div class="legend" id="layer-legend" aria-label="คำอธิบายสีแต่ละชั้น"></div>
+
+        <div class="pipeline-wrap" aria-label="แผนภาพ Value Chain">
+          <div class="pipeline" id="pipeline"></div>
+        </div>
+
+        <div class="results-meta">
+          <p id="results-count" aria-live="polite"></p>
+          <button class="text-button" id="clear-filters" type="button">ล้างตัวกรอง</button>
+        </div>
+        <div class="company-grid" id="company-grid"></div>
+
+        <div class="spcx-alert" id="spcx-alert" role="note"></div>
+
+        <div class="subsection-heading">
+          <div>
+            <p class="section-kicker">RELATIONSHIPS</p>
+            <h3>เส้นทางธุรกิจที่เชื่อมกัน</h3>
+          </div>
+          <p>ชี้หรือโฟกัสที่เส้นเพื่ออ่านเหตุผลของความสัมพันธ์</p>
+        </div>
+        <div class="relationship-grid" id="relationship-grid"></div>
+      </section>
+
+      <section class="section section-tinted" id="scenarios" aria-labelledby="scenario-title">
+        <div class="shell">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">02 · SCENARIO ANALYSIS</p>
+              <h2 id="scenario-title">ถ้าบริษัทหนึ่งงบดี หุ้นใดอาจได้รับผลกระทบ</h2>
+              <p>อ่านสัญญาณ ผลกระทบที่เป็นไปได้ และข้อควรระวังควบคู่กัน</p>
+            </div>
+            <div class="scenario-note">
+              <span aria-hidden="true">◎</span>
+              <span><strong>Impact ≠ Price move</strong><br />ธุรกิจเชื่อมกัน แต่ราคาหุ้นขึ้นกับ expectation</span>
+            </div>
+          </div>
+          <div class="scenario-list" id="scenario-list"></div>
+        </div>
+      </section>
+
+      <section class="section shell" id="matrix" aria-labelledby="matrix-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">03 · PORTFOLIO DEPENDENCY</p>
+            <h2 id="matrix-title">Dependency Matrix</h2>
+            <p>กดหัวตารางเพื่อเรียงระดับความเสี่ยงจากสูงไปต่ำหรือกลับกัน</p>
+          </div>
+          <div class="impact-legend" aria-label="ระดับความเสี่ยง">
+            <span class="level-pill low">Low</span>
+            <span class="level-pill medium">Medium</span>
+            <span class="level-pill high">High</span>
+            <span class="level-pill very-high">Very High</span>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-scroll">
+            <table>
+              <thead id="matrix-head"></thead>
+              <tbody id="matrix-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-tinted" id="checklist" aria-labelledby="checklist-title">
+        <div class="shell">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">04 · EARNINGS WORKBENCH</p>
+              <h2 id="checklist-title">Earnings Checklist</h2>
+              <p>เลือกบริษัทแล้วติ๊กสิ่งที่ตรวจครบ สถานะจะถูกเก็บไว้ในเครื่องนี้</p>
+            </div>
+            <div class="checklist-progress" aria-live="polite">
+              <span id="progress-label">0 / 0</span>
+              <div class="progress-track"><span id="progress-bar"></span></div>
+            </div>
+          </div>
+          <div class="checklist-layout">
+            <div class="ticker-tabs" id="ticker-tabs" role="tablist" aria-label="เลือกบริษัท"></div>
+            <div class="checklist-card">
+              <div class="checklist-card-head" id="checklist-card-head"></div>
+              <div class="checklist-items" id="checklist-items"></div>
+              <form class="spcx-add-form" id="spcx-add-form" hidden>
+                <label for="spcx-metric">เพิ่มหัวข้อตรวจสอบสำหรับ SPCX</label>
+                <div>
+                  <input id="spcx-metric" type="text" maxlength="80" placeholder="เช่น Revenue growth" />
+                  <button class="button secondary" type="submit">เพิ่มรายการ</button>
+                </div>
+              </form>
+              <button class="text-button reset-checklist" id="reset-checklist" type="button">รีเซ็ต Checklist บริษัทนี้</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="shell footer-grid">
+        <div>
+          <span class="brand-mark" aria-hidden="true">AI</span>
+          <p>AI Investment Value Chain Map</p>
+          <small>โครงสร้างข้อมูลแก้ไขได้จากไฟล์ data.js</small>
+        </div>
+        <p class="disclaimer">
+          ข้อมูลนี้จัดทำเพื่ออธิบายโครงสร้างธุรกิจและความสัมพันธ์ของบริษัทเท่านั้น ไม่ใช่คำแนะนำในการซื้อหรือขายหลักทรัพย์
+          ผลกระทบต่อราคาหุ้นอาจแตกต่างจากความสัมพันธ์ทางธุรกิจ เนื่องจากราคาหุ้นขึ้นอยู่กับความคาดหวัง Valuation
+          สภาวะตลาด และข้อมูลที่ตลาดรับรู้ล่วงหน้าแล้ว
+        </p>
+      </div>
+    </footer>
+
+    <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+    <aside class="company-drawer" id="company-drawer" aria-labelledby="drawer-title" aria-modal="true" role="dialog" hidden>
+      <button class="drawer-close icon-button" id="drawer-close" type="button" aria-label="ปิดรายละเอียด">×</button>
+      <div id="drawer-content"></div>
+    </aside>
+
+    <div class="install-backdrop" id="install-backdrop" hidden></div>
+    <section class="install-sheet" id="install-sheet" aria-labelledby="install-title" aria-modal="true" role="dialog" hidden>
+      <button class="install-sheet-close icon-button" id="install-sheet-close" type="button" aria-label="ปิดวิธีติดตั้ง">×</button>
+      <span class="install-sheet-icon" aria-hidden="true">AI</span>
+      <p class="section-kicker">INSTALL ON IPHONE</p>
+      <h2 id="install-title">เพิ่มไว้บนหน้าจอโฮม</h2>
+      <p class="install-sheet-copy">เปิดดูเหมือนแอปเต็มหน้าจอ และเข้าถึง Dashboard ได้จากไอคอนบน iPhone</p>
+      <ol class="install-steps">
+        <li><span>1</span><div><strong>เปิดด้วย Safari</strong><small>ใช้ Safari เพื่อให้เมนูติดตั้งของ Apple แสดงครบ</small></div></li>
+        <li><span>2</span><div><strong>แตะ Share</strong><small>ไอคอนสี่เหลี่ยมมีลูกศรชี้ขึ้นด้านล่างหน้าจอ</small></div></li>
+        <li><span>3</span><div><strong>เลือก Add to Home Screen</strong><small>จากนั้นแตะ Add ที่มุมขวาบน</small></div></li>
+      </ol>
+      <p class="install-sheet-note">ราคาจะอัปเดตอัตโนมัติทุก 30 วินาทีเมื่อเปิดแอป</p>
+    </section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
