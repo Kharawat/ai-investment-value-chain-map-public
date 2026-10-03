@@ -1,66 +1,56 @@
-const CACHE_NAME = "ai-value-chain-shell-v4";
+const CACHE_PREFIX = "ai-value-chain-shell-" + encodeURIComponent(self.registration.scope) + "-";
+const CACHE_NAME = CACHE_PREFIX + "v5";
 const APP_SHELL = [
-  "./",
-  "./index.html",
-  "./styles.css",
-  "./data.js",
-  "./app.js?v=20260723-10",
-  "./manifest.webmanifest",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/icon-512-maskable.png",
-  "./icons/apple-touch-icon.png",
+  "./", "./index.html", "./styles.css", "./data.js", "./app.js?v=20261003-security",
+  "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png",
+  "./icons/icon-512-maskable.png", "./icons/apple-touch-icon.png",
 ];
+const SHELL_URLS = new Set(APP_SHELL.map((file) => new URL(file, self.registration.scope).href));
+
+function cacheable(response) {
+  return response.ok && !response.redirected && response.type !== "opaque" &&
+    !/(?:no-store|private)/i.test(response.headers.get("cache-control") || "");
+}
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
-  self.skipWaiting();
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    for (const url of SHELL_URLS) {
+      const response = await fetch(url, { credentials: "omit", redirect: "error", cache: "reload" });
+      if (!cacheable(response)) throw new Error("Application shell cannot be cached");
+      await cache.put(url, response);
+    }
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches
-      .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
-      .then(() => self.clients.claim()),
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((key) => key !== CACHE_NAME &&
+      (key.startsWith(CACHE_PREFIX) || /^ai-value-chain-shell-v\d+$/.test(key)))
+      .map((key) => caches.delete(key)));
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;
-  if (request.method !== "GET") return;
-
-  const url = new URL(request.url);
-
-  if (url.pathname === "/api/quotes") {
-    event.respondWith(fetch(request));
-    return;
-  }
-
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", copy));
-          return response;
-        })
-        .catch(() => caches.match("./index.html")),
-    );
-    return;
-  }
-
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => caches.match(request)),
-    );
-  }
+  // APIs, unrelated apps, authenticated requests and query variants bypass caches.
+  if (request.method !== "GET" || request.headers.has("authorization") ||
+      !SHELL_URLS.has(request.url)) return;
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    try {
+      const response = await fetch(request, { credentials: "omit", redirect: "error" });
+      if (cacheable(response)) {
+        event.waitUntil(cache.put(request, response.clone()));
+      } else {
+        event.waitUntil(cache.delete(request));
+      }
+      return response;
+    } catch {
+      return (await cache.match(request)) || Response.error();
+    }
+  })());
 });

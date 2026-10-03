@@ -73,7 +73,7 @@
   function loadJSON(key, fallback) {
     try {
       const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : fallback;
+      return raw && raw.length <= 512 * 1024 ? JSON.parse(raw) : fallback;
     } catch {
       return fallback;
     }
@@ -448,7 +448,7 @@
   }
 
   function customSPCXMetrics() {
-    return loadJSON("ai-value-chain-spcx-metrics", []);
+    return safeArray(loadJSON("ai-value-chain-spcx-metrics", [])).filter((item) => typeof item === "string" && item.length <= 500).slice(0, 100);
   }
 
   function metricsFor(company) {
@@ -457,7 +457,8 @@
   }
 
   function checklistState(ticker) {
-    return loadJSON(checklistKey(ticker), {});
+    const saved = loadJSON(checklistKey(ticker), {});
+    return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
   }
 
   function completionFor(company) {
@@ -712,11 +713,31 @@
     });
   }
 
+  function validQuotes(quotes) {
+    const known = new Set(data.companies.map((company) => company.ticker));
+    const result = Object.create(null);
+    for (const quote of safeArray(quotes).slice(0, 100)) {
+      if (!quote || !known.has(quote.ticker) ||
+          ![quote.price, quote.change, quote.changePercent].every((value) => typeof value === "number" && Number.isFinite(value)) || quote.price < 0) continue;
+      result[quote.ticker] = { ticker: quote.ticker, price: quote.price, change: quote.change, changePercent: quote.changePercent };
+    }
+    return result;
+  }
+
+  function validMeta(meta) {
+    if (!meta || typeof meta !== "object") return null;
+    return {
+      source: typeof meta.source === "string" ? meta.source.slice(0, 100) : "Market data",
+      marketStatus: meta.marketStatus === "OPEN" ? "OPEN" : "CLOSED",
+      updatedAt: Number.isFinite(Date.parse(meta.updatedAt)) ? new Date(meta.updatedAt).toISOString() : null,
+    };
+  }
+
   function restoreSavedQuotes() {
     const saved = loadJSON("ai-value-chain-last-quotes", null);
     if (!saved || !saved.quotes || !saved.meta) return;
-    state.quotes = saved.quotes;
-    state.quoteMeta = saved.meta;
+    state.quotes = validQuotes(Object.values(saved.quotes));
+    state.quoteMeta = validMeta(saved.meta);
   }
 
   function saveQuotesForFallback() {
@@ -752,27 +773,22 @@
       const response = await fetch("/api/quotes", {
         headers: { Accept: "application/json" },
         cache: "no-store",
+        signal: AbortSignal.timeout(15000),
+        redirect: "error",
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(payload.message || `Market data error ${response.status}`);
+        throw new Error("Market data unavailable");
       }
 
-      state.quotes = safeArray(payload.quotes).reduce((quotes, quote) => {
-        if (quote?.ticker) quotes[quote.ticker] = quote;
-        return quotes;
-      }, {});
-      state.quoteMeta = {
-        source: payload.source,
-        marketStatus: payload.marketStatus,
-        updatedAt: payload.updatedAt,
-      };
+      state.quotes = validQuotes(payload?.quotes);
+      state.quoteMeta = validMeta(payload);
       state.quoteError = "";
       clearTimeout(quoteRetryTimer);
       quoteRetryTimer = undefined;
       saveQuotesForFallback();
     } catch (error) {
-      state.quoteError = error?.message || "ไม่สามารถโหลดราคาล่าสุด";
+      state.quoteError = "ไม่สามารถโหลดราคาล่าสุด";
       retryQuotesSoon();
     } finally {
       state.quoteLoading = false;
@@ -879,12 +895,13 @@
       event.preventDefault();
       const input = byId("spcx-metric");
       const value = input.value.trim();
-      if (!value) return;
+      if (!value || value.length > 500) return;
       const custom = customSPCXMetrics();
       if (custom.some((item) => item.toLowerCase() === value.toLowerCase())) {
         showToast("มีหัวข้อนี้อยู่แล้ว");
         return;
       }
+      if (custom.length >= 100) { showToast("เพิ่มได้สูงสุด 100 หัวข้อ"); return; }
       custom.push(value);
       saveJSON("ai-value-chain-spcx-metrics", custom);
       input.value = "";
